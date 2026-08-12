@@ -17,5 +17,6 @@ bash "${SCRIPT_DIR}/70-webapp-go.sh"
 bash "${SCRIPT_DIR}/75-matcher.sh"
 bash "${SCRIPT_DIR}/80-frontend.sh"
 bash "${SCRIPT_DIR}/90-nginx.sh"
+bash "${SCRIPT_DIR}/95-deploy-helper.sh"
 
 log "all.sh: done"
