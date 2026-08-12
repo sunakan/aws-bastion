@@ -178,6 +178,6 @@ description = "scripts/以下をlint"
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
-SH_FILES=$(ls -1 scripts/*.sh | xargs -n1 basename)
-docker run --rm -it -u "$(id -u):$(id -g)" --mount type=bind,source="${PWD}/scripts/",target=/scripts/ -w /scripts koalaman/shellcheck:v0.11.0 $SH_FILES
+SH_FILES=$(find scripts -name '*.sh' | sed 's#^scripts/##')
+docker run --rm -it -u "$(id -u):$(id -g)" --mount type=bind,source="${PWD}/scripts/",target=/scripts/ -w /scripts koalaman/shellcheck:v0.11.0 -x -P SCRIPTDIR $SH_FILES
 '''
