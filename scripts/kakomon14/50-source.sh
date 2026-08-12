@@ -39,12 +39,14 @@ clone_isucon14() {
 # rsyncコピーではなくシンボリックリンクにしているのは、frontend-buildタスクでwebapp/public配下に
 # ビルド成果物を書き込む際、cloneしたツリーにそのまま反映されるようにするため
 # (rsyncコピーだと別途同期し直す手間が発生する)。
+# シンボリックリンク自体の所有者はchownしない。Linuxではシンボリックリンク自体の
+# パーミッション/所有者はカーネルからほぼ無視され、実際のアクセス制御はリンク先の実体
+# (isuren所有のisucon14/webapp)に対して行われるため、機能的に不要。
 link_webapp() {
   if [ -L "${WEBAPP_LINK}" ] && [ "$(readlink "${WEBAPP_LINK}")" = "${ISUCON14_DIR}/webapp" ]; then
     log "webapp: symlink already up to date"
   else
     ln -sfn "${ISUCON14_DIR}/webapp" "${WEBAPP_LINK}"
-    chown -h "${ISUREN_USER}:${ISUREN_USER}" "${WEBAPP_LINK}"
     log "webapp: symlink created"
   fi
 }
