@@ -10,20 +10,28 @@ MISE_BIN="${ISUREN_HOME}/.local/bin/mise"
 FRONTEND_DIR="${ISUREN_HOME}/isucon14/frontend"
 WEBAPP_PUBLIC_DIR="${ISUREN_HOME}/webapp/public"
 
+# pnpm 10以降はesbuild/@swc/core等のpostinstallスクリプトをデフォルトでブロックする(strictDepBuilds)。
+# allowBuildsが未設定のまま`pnpm install`すると、esbuildのネイティブバイナリが導入されず
+# ERR_PNPM_IGNORED_BUILDSでexit 1になる(vite buildにesbuildが必須なため実害がある)。
+# pnpm-workspace.kakomon14.yaml(pnpm approve-builds --allで生成した内容をgit管理化したもの)を
+# installより先に配置することで、1回目から承認済みの状態でinstallできるようにする。
+set_pnpm_workspace_yaml() {
+  local dest="${FRONTEND_DIR}/pnpm-workspace.yaml"
+  if [ ! -f "${dest}" ] || ! diff -q "${SCRIPT_DIR}/pnpm-workspace.kakomon14.yaml" "${dest}" >/dev/null 2>&1; then
+    install -o "${ISUREN_USER}" -g "${ISUREN_USER}" -m 0644 "${SCRIPT_DIR}/pnpm-workspace.kakomon14.yaml" "${dest}"
+    log "pnpm-workspace.yaml: changed ${dest}"
+  else
+    log "pnpm-workspace.yaml: already up to date"
+  fi
+}
+
 # 対応: frontend-buildタスクの「やること」1点目。
 # ビルドのたびに最新化する必要があるため、changed/already判定はせず常に実行する。
 # runuser経由では.bashrcを経由せずmise/pnpmがPATHに乗らないため、mise本体はフルパスで呼ぶ。
-# pnpm 10以降はesbuild/@swc/core等のpostinstallスクリプトをデフォルトでブロックする(strictDepBuilds)。
-# 未承認の状態だと1回目のpnpm installがERR_PNPM_IGNORED_BUILDSでexit 1になるため失敗を許容し、
-# pnpm approve-builds --all(非対話で全承認)を挟んでから再度installしてscriptを実行させる。
 build_frontend() {
   # shellcheck disable=SC2016 # env経由で渡したFRONTEND_DIR/MISE_BINをsh -c内で展開させる
   runuser -u "${ISUREN_USER}" -- env FRONTEND_DIR="${FRONTEND_DIR}" MISE_BIN="${MISE_BIN}" \
-    sh -c 'cd "${FRONTEND_DIR}" &&
-      ("${MISE_BIN}" exec -- pnpm install --frozen-lockfile || true) &&
-      "${MISE_BIN}" exec -- pnpm approve-builds --all &&
-      "${MISE_BIN}" exec -- pnpm install --frozen-lockfile &&
-      "${MISE_BIN}" exec -- pnpm run build'
+    sh -c 'cd "${FRONTEND_DIR}" && "${MISE_BIN}" exec -- pnpm install --frozen-lockfile && "${MISE_BIN}" exec -- pnpm run build'
   log "frontend: built"
 }
 
@@ -37,6 +45,7 @@ sync_public() {
   log "webapp/public: synced"
 }
 
+set_pnpm_workspace_yaml
 build_frontend
 sync_public
 
