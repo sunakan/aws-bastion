@@ -134,7 +134,7 @@ Resources:
           set -euxo pipefail
 
           apt-get update
-          apt-get install -y ca-certificates curl neovim
+          apt-get install -y ca-certificates curl neovim git
 
           # convenience script(get.docker.com)はスクリプト自体の署名/チェックサム検証がなく
           # 公式ドキュメントでも開発/テスト環境限定の推奨のため、本番同様に扱えるAPTリポジトリ経由でインストールする
@@ -157,6 +157,9 @@ Resources:
           sudo -u ubuntu -i sh -c 'curl -fsSL https://mise.run | sh'
           # mise.runはバイナリ配置のみでPATH設定は行わないため.bashrcに追記する
           echo 'eval "$(~/.local/bin/mise activate bash)"' >> /home/ubuntu/.bashrc
+
+          # このリポジトリ自体をubuntuユーザーのホームにcloneしておく
+          sudo -u ubuntu -i sh -c 'install -d -m 0755 ~/works/github.com/sunakan && git clone https://github.com/sunakan/aws-bastion.git ~/works/github.com/sunakan/aws-bastion'
 
 Outputs:
   InstanceId:
