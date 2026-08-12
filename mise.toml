@@ -124,6 +124,29 @@ aws ssm start-session --target "$INSTANCE_ID" \
   --parameters command="sudo su - ubuntu"
 '''
 
+[tasks.pull-bastion]
+description = "bastion stackを一覧から選びaws-bastionリポジトリをrsyncでローカルに取得(.git以外)"
+interactive = true
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+if [ -n "$(git status --porcelain)" ]; then
+  echo "未コミットの変更があります。pull-bastionはリモート(EC2側)の内容でローカルを上書きするため、変更が失われる可能性があります。先にcommitしてください。" >&2
+  git status --short >&2
+  exit 1
+fi
+STACK_NAME="$(aws cloudformation describe-stacks \
+  --query "Stacks[?starts_with(StackName, '${BASTION_STACK_NAME}')].StackName" --output text | tr '\t' '\n' | fzf)"
+if [ -z "$STACK_NAME" ]; then
+  echo "選択されませんでした" >&2
+  exit 1
+fi
+INSTANCE_ID="$(aws cloudformation describe-stacks \
+  --stack-name "$STACK_NAME" \
+  --query "Stacks[0].Outputs[?OutputKey=='InstanceId'].OutputValue" --output text)"
+rsync -avz --exclude='.git' -e "ssh -F .ssh/config" "${INSTANCE_ID}:~/works/github.com/sunakan/aws-bastion/" ./
+'''
+
 # docker: mvdan/shfmtは作者製
 # https://hub.docker.com/r/mvdan/shfmt/dockerfile
 [tasks.fmt-sh]
