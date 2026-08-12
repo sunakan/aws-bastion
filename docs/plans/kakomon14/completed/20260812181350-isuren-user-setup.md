@@ -17,6 +17,12 @@ Ansibleの`roles/isucon-user`相当を、`isucon`→`isuren`に読み替えて�
 
 `runuser -u isuren -- sudo -n true` が通ること
 
+## 決定事項
+
+- パスワード設定(元Ansibleの`password: isucon`、平文でほぼ無効な実装)と`.ssh`ディレクトリ作成/`authorized_keys`削除は意図的に未対応。bastionはSSHキー/sudo経由の運用でisurenへのパスワードログインを想定しないため
+- `scripts/kakomon14/20-user.sh`をbastion上で2回実行し、1回目全項目changed→2回目全項目already up to dateを確認済み
+- `sudo runuser -u isuren -- sudo -n true`が`OK`を返すことを確認済み(完了条件を満たす。`runuser`はroot権限が必要なため`sudo`を付けて実行する)
+
 ## 関連
 
 - docs/isuren-kakomon-strategy.md
