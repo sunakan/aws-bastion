@@ -131,9 +131,11 @@ fi
 INSTANCE_ID="$(aws cloudformation describe-stacks \
   --stack-name "$STACK_NAME" \
   --query "Stacks[0].Outputs[?OutputKey=='InstanceId'].OutputValue" --output text)"
+CONNECT_CMD="sudo su - ubuntu -c '[ -d ~/works/github.com/sunakan/aws-bastion ] && cd ~/works/github.com/sunakan/aws-bastion; exec bash -l'"
+CONNECT_PARAMS="$(jq -n --arg cmd "$CONNECT_CMD" '{command: [$cmd]}')"
 aws ssm start-session --target "$INSTANCE_ID" \
   --document-name AWS-StartInteractiveCommand \
-  --parameters command="sudo su - ubuntu"
+  --parameters "$CONNECT_PARAMS"
 '''
 
 [tasks.pull-bastion]
