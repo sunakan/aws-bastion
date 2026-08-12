@@ -157,6 +157,8 @@ Resources:
           sudo -u ubuntu -i sh -c 'curl -fsSL https://mise.run | sh'
           # mise.runはバイナリ配置のみでPATH設定は行わないため.bashrcに追記する
           echo 'eval "$(~/.local/bin/mise activate bash)"' >> /home/ubuntu/.bashrc
+          # mise.bastion.tomlをグローバル設定として使い、tools定義(Node.js等)をmise.bastion.lock通りに常時有効にする
+          echo 'export MISE_GLOBAL_CONFIG_FILE=$HOME/works/github.com/sunakan/aws-bastion/mise.bastion.toml' >> /home/ubuntu/.bashrc
 
           # このリポジトリ自体をubuntuユーザーのホームにcloneしておく
           sudo -u ubuntu -i sh -c 'install -d -m 0755 ~/works/github.com/sunakan && git clone https://github.com/sunakan/aws-bastion.git ~/works/github.com/sunakan/aws-bastion'
