@@ -13,10 +13,17 @@ WEBAPP_PUBLIC_DIR="${ISUREN_HOME}/webapp/public"
 # 対応: frontend-buildタスクの「やること」1点目。
 # ビルドのたびに最新化する必要があるため、changed/already判定はせず常に実行する。
 # runuser経由では.bashrcを経由せずmise/pnpmがPATHに乗らないため、mise本体はフルパスで呼ぶ。
+# pnpm 10以降はesbuild/@swc/core等のpostinstallスクリプトをデフォルトでブロックする(strictDepBuilds)。
+# 未承認の状態だと1回目のpnpm installがERR_PNPM_IGNORED_BUILDSでexit 1になるため失敗を許容し、
+# pnpm approve-builds --all(非対話で全承認)を挟んでから再度installしてscriptを実行させる。
 build_frontend() {
   # shellcheck disable=SC2016 # env経由で渡したFRONTEND_DIR/MISE_BINをsh -c内で展開させる
   runuser -u "${ISUREN_USER}" -- env FRONTEND_DIR="${FRONTEND_DIR}" MISE_BIN="${MISE_BIN}" \
-    sh -c 'cd "${FRONTEND_DIR}" && "${MISE_BIN}" exec -- pnpm install --frozen-lockfile && "${MISE_BIN}" exec -- pnpm run build'
+    sh -c 'cd "${FRONTEND_DIR}" &&
+      ("${MISE_BIN}" exec -- pnpm install --frozen-lockfile || true) &&
+      "${MISE_BIN}" exec -- pnpm approve-builds --all &&
+      "${MISE_BIN}" exec -- pnpm install --frozen-lockfile &&
+      "${MISE_BIN}" exec -- pnpm run build'
   log "frontend: built"
 }
 
