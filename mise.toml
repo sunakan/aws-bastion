@@ -6,6 +6,18 @@ BASTION_STACK_NAME = "aws-bastion"
 description = "hello"
 run = "echo hello"
 
+[tasks.lock-bastion]
+description = "mise.bastion.lockをLinux(arm64/x64)向けに更新(ubuntu側で実行すること)"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+if [ "$(uname -s)" != "Linux" ]; then
+  echo "このタスクはubuntu(Linux)側で実行してください。ローカルでの誤実行を防ぐガードです。" >&2
+  exit 1
+fi
+env -u MISE_GLOBAL_CONFIG_FILE mise lock -E bastion -p linux-x64,linux-arm64 --bump
+'''
+
 [tasks.up-bastion]
 description = "bastion stackをタイムスタンプ付きの名前で起動(同時に複数立てられる)"
 run = '''
