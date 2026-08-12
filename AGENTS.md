@@ -43,6 +43,6 @@
 - ベンチ実行時の`context deadline exceeded`多発は、インスタンスのリソース不足(CPU)が原因のことがある。アプリのバグかリソース不足かの切り分けが必要
 - `development/compose-go.yml`のコンテナ(特にnginxの8080番ポートマッピング)が起動したままだと、ネイティブの`isuride-go`等とポートが競合し再起動ループになる。ネイティブ構築を進める前に`docker ps`で止まっていることを確認する(`docker compose -f compose-go.yml down`で停止)
 - このbastion(Ubuntu 26.04 arm64)の`chown`はGNU coreutilsではなくuutils coreutils(Rust実装)で、`-h`/`--no-dereference`がexit 0を返すのに実際にはlchownしないバグがある。シンボリックリンクの所有者変更が必要な場面は要注意(通常ファイルへの`chown`は正常動作)
-- `runuser -u isuren -- <cmd>`は`.bashrc`を経由しないため、mise/pnpm等はフルパス(`/home/isuren/.local/bin/mise`)で呼ぶ必要がある。pnpmはさらにcwdからworkspace定義を探索するため、isurenが読めないディレクトリ(`/home/ubuntu/...`等)をcwdにしたまま実行すると`EACCES`になる
+- `runuser -u isuren -- <cmd>`は`.bashrc`を経由しないため、mise/pnpm等はフルパス(`/home/isuren/.local/bin/mise`)で呼ぶ必要がある。pnpmはさらにcwdからworkspace定義を探索するため、isurenが読めないディレクトリ(`/home/ubuntu/...`等)をcwdにしたまま実行すると`EACCES`になる。goの場合は`EACCES`ではなく`go.mod file not found`という別症状で現れる(`/home/ubuntu`が750でisurenがグループ外のため)。回避策として、isurenのmiseインストール先(`/home/isuren/.local/...`は755で他ユーザーからも実行可)のバイナリをフルパス指定しつつ、実行ユーザーはubuntuのままにする方法がある(例: `sudo -u ubuntu /home/isuren/.local/share/mise/installs/go/<version>/bin/go run . run ...`)
 - pnpm 10以降はesbuild/@swc/core等のpostinstallスクリプトをデフォルトでブロックする(strictDepBuilds)。事前に承認内容を`pnpm-workspace.yaml`に書いておく必要がある(kakomon14では`scripts/kakomon14/pnpm-workspace.kakomon14.yaml`で管理)
 - t4g.small(メモリ1.8GiB、swap無し)は`pnpm install`のような重いビルドでOOM killerが発動しうる。恒久対応(swap追加等)は未着手で、一時的なインスタンスタイプ変更(stop→modify-instance-attribute→start)で回避した実績がある
