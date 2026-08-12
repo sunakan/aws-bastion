@@ -49,6 +49,19 @@ set_mise_config() {
   fi
 }
 
+# チェックサムを固定してサプライチェーン改ざん検知・再現性を担保する。
+# linux-arm64のみを対象にしているのはこのAMIがarm64(Graviton)専用のため。
+# `mise lock -g -p linux-arm64`で生成したものをgit管理し、そのまま配置する。
+set_mise_lock() {
+  local lock="${ISUREN_HOME}/.config/mise/mise.lock"
+  if [ ! -f "${lock}" ] || ! diff -q "${SCRIPT_DIR}/mise.kakomon14.lock" "${lock}" >/dev/null 2>&1; then
+    install -m 0644 -o "${ISUREN_USER}" -g "${ISUREN_USER}" "${SCRIPT_DIR}/mise.kakomon14.lock" "${lock}"
+    log "mise lock: changed ${lock}"
+  else
+    log "mise lock: already up to date"
+  fi
+}
+
 # mise install自体が内部で冪等(既にインストール済みのバージョンは再取得しない)なため、
 # ここでは changed/already の判定を自前で行わずmiseに委ねる。
 run_mise_install() {
@@ -59,6 +72,7 @@ run_mise_install() {
 install_mise
 set_bashrc
 set_mise_config
+set_mise_lock
 run_mise_install
 
 log "30-runtime.sh: done"
