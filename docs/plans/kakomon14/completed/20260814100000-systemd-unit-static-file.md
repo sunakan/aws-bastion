@@ -39,3 +39,29 @@ isuren-mondai側はGoのみに絞りユーザー名も`isucon`→`isuren`に読�
 - docs/plans/kakomon14/completed/20260813125100-payment-mock-wiring.md
   (過去にpayment_mockのsystemd化は「不要」と結論していたが、本家に近い分離サーバー構成を
   見据える方針転換により再度必要と判断し、`77-payment-mock.sh`として実装済み)
+
+## 決定事項
+
+案Aで実装。ただし当初想定していた「本家からの実質コピーかどうかで案A/案Bを分ける」という
+判断軸そのものが不要と判明した。
+
+- `ISUREN_USER`はisuren-mondai側のどこでも実際には上書きされていない(grep確認済み)ため、
+  heredocでの変数展開は使われない柔軟性だった。本家と同じ「展開済みの静的ファイル」で足りる
+- `kakomon14/provisioning/systemd/isuride-{go,matcher,payment_mock}.service`として、
+  `isuren`/`/home/isuren/...`に展開済みの静的ファイルを新規作成し、isuren-mondai側でgit管理
+  (upstream/isucon14/配下ではなくkakomon14/provisioning/systemd/配下。理由は後述)
+- 各スクリプトの`set_systemd_unit()`はheredoc生成から`install`でのファイル配置のみに簡略化
+- `kakomon14/cloud-init/generate-user-data.py`が`systemd/*.service`をglob自動収集するよう対応
+
+**upstream/isucon14/配下ではなくkakomon14/provisioning/systemd/配下に置いた理由**:
+本家からの単純コピーではなく`isucon`→`isuren`書き換え・After/Requires行の取捨選択など
+isuren-mondai固有の改変が入っているため、「取り込んだ本家コード」ではなく
+「isuren-mondai自身の自作物(provisioning設定の一部)」として扱うのが実態に合う
+(AGENTS.md「過去問コードの取り込み(upstream)方針」の分離基準と整合)。
+
+**ヘルパー関数による重複排除は不採用**: `write_systemd_unit`/`enable_and_restart_service`
+のような共通ヘルパーへの抽出も検討したが、原本(Ansible)を確認したところ
+`ansible.builtin.copy`+`service`モジュールという組み込みの再利用可能部品で処理しており、
+コード上の重複は元々存在しなかった。bash側の重複はAnsibleのモジュール機構が無いことに
+起因する表面的なものであり、静的ファイル化(heredocという生成ロジックそのものの削除)で
+解消すれば十分と判断し、新たな共通関数の追加は見送った。
